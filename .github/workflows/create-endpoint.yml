@@ -49,8 +49,21 @@ jobs:
 
       - name: create-environment-from-file
         run: |
-          az ml ${{ inputs.endpoint_type }}-endpoint create \
+          if az ml ${{ inputs.endpoint_type }}-endpoint show \
             --name ${{ inputs.endpoint_name }} \
-            -f ${{ github.workspace }}/${{ inputs.endpoint_file }} \
             --resource-group ${{ inputs.resource_group }} \
-            --workspace-name ${{ inputs.workspace_name }}
+            --workspace-name ${{ inputs.workspace_name }} > /dev/null 2>&1; then
+            echo "Endpoint already exists, updating..."
+            az ml ${{ inputs.endpoint_type }}-endpoint update \
+              --name ${{ inputs.endpoint_name }} \
+              -f ${{ github.workspace }}/${{ inputs.endpoint_file }} \
+              --resource-group ${{ inputs.resource_group }} \
+              --workspace-name ${{ inputs.workspace_name }}
+          else
+            echo "Creating new endpoint..."
+            az ml ${{ inputs.endpoint_type }}-endpoint create \
+              --name ${{ inputs.endpoint_name }} \
+              -f ${{ github.workspace }}/${{ inputs.endpoint_file }} \
+              --resource-group ${{ inputs.resource_group }} \
+              --workspace-name ${{ inputs.workspace_name }}
+          fi
